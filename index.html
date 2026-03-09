@@ -1,494 +1,362 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>꾹꾹팡</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
-      width: 100%; height: 100%;
-      background: #0f0a1e;
-      overflow: hidden;
-      touch-action: none;
-      user-select: none;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-family: system-ui, sans-serif;
-      color: white;
-    }
-    #header {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px 8px;
-    }
-    #levelInfo { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
-    #movesInfo { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
-    #undoBtn {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 10px;
-      color: white;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-      outline: none;
-    }
-    #undoBtn:active { background: rgba(255,255,255,0.22); }
-    #gameArea {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-    }
-    canvas { display: block; image-rendering: pixelated; }
-    #hint {
-      padding: 10px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.3);
-      text-align: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>꾹꾹팡</title>
+    <style>
+        :root {
+            --sky-blue: #79a6ed;
+            --brick-red: #cc3520;
+            --brick-highlight: #f06a54;
+            --brick-shadow: #851b0d;
+            --floor-sand: #f5dfba;
+            --floor-dot: #8c734b;
+            --cell-size: 50px;
+        }
 
-    /* Win overlay */
-    #winOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      z-index: 10;
-      align-items: center;
-      justify-content: center;
-    }
-    #winOverlay.show { display: flex; }
-    .winCard {
-      background: #1a0e30;
-      border: 2px solid #7c3aed;
-      border-radius: 24px;
-      padding: 36px 28px;
-      text-align: center;
-      width: 78%;
-      max-width: 300px;
-    }
-    .winStars { font-size: 40px; margin-bottom: 10px; letter-spacing: 4px; }
-    .winTitle { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
-    .winSub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
-    .winBtn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      color: white;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      outline: none;
-      margin-bottom: 10px;
-    }
-    .winBtn:active { opacity: 0.8; }
-    .btnPrimary { background: linear-gradient(135deg, #7c3aed, #a855f7); }
-    .btnSecondary { background: rgba(255,255,255,0.1); font-size: 13px; color: rgba(255,255,255,0.6); padding: 10px; }
-  </style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--sky-blue);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.9' transform='scale(0.5)'/%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.7' transform='translate(150, 100) scale(0.3)'/%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.8' transform='translate(80, 200) scale(0.4)'/%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.6' transform='translate(250, 250) scale(0.2)'/%3E%3C/svg%3E");
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Arial Black', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            position: relative;
+            transform-origin: center;
+            transition: transform 0.2s ease;
+        }
+
+        #game-container {
+            display: grid;
+            filter: drop-shadow(0 20px 20px rgba(0,0,0,0.5));
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            position: relative;
+        }
+
+        .void {
+            background: transparent;
+            z-index: 20;
+        }
+
+        .floor {
+            background-color: var(--floor-sand);
+            background-image: radial-gradient(var(--floor-dot) 15%, transparent 16%);
+            background-size: 10px 10px;
+        }
+
+        .wall {
+            background-color: var(--brick-red);
+            background-image:
+                /* 가로 모르타르 줄 */
+                linear-gradient(transparent 48%, #6a1206 48%, #6a1206 52%, transparent 52%),
+                /* 세로 모르타르 줄 - 1행 */
+                linear-gradient(90deg, transparent 48%, #6a1206 48%, #6a1206 52%, transparent 52%),
+                /* 전체 그라데이션 */
+                linear-gradient(160deg, rgba(255,255,255,0.12) 0%, transparent 50%, rgba(0,0,0,0.18) 100%);
+            border: 2px solid #1a0500;
+            box-sizing: border-box;
+            box-shadow:
+                inset 5px 5px 0px var(--brick-highlight),
+                inset -5px -5px 0px var(--brick-shadow),
+                inset 0 0 8px rgba(0,0,0,0.15);
+            z-index: 2;
+        }
+
+        .entity {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .goal-icon svg { width: 80%; height: 80%; }
+        .player img { width: 100%; height: 100%; z-index: 10; object-fit: contain; }
+        .ball-img   { width: 95%; height: 95%; object-fit: contain; }
+
+        /* 털실 공 */
+        .ball { z-index: 5; }
+        .ball.on-goal .ball-img { filter: brightness(1.2) saturate(1.5) hue-rotate(100deg); transform: scale(0.9); }
+
+
+        #msg-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #msg-overlay.show { display: flex; }
+        #msg-box {
+            background: #fff;
+            border-radius: 24px;
+            padding: 36px 28px;
+            text-align: center;
+            width: 76%;
+            max-width: 290px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+        }
+        .msg-stars { font-size: 34px; letter-spacing: 4px; margin-bottom: 10px; }
+        .msg-title { font-size: 22px; font-weight: 900; color: #1a3a5c; margin-bottom: 6px; }
+        .msg-sub { font-size: 13px; color: #999; margin-bottom: 22px; }
+        .msg-btn {
+            width: 100%; padding: 13px;
+            border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer; outline: none;
+            margin-bottom: 8px;
+        }
+        .msg-btn:active { opacity: 0.8; }
+        .msg-btn-retry { background: #ff9500; color: white; }
+        .msg-btn-next  { background: #5baad8; color: white; }
+    </style>
 </head>
 <body>
-  <div id="header">
-    <div>
-      <div id="levelInfo">LEVEL 1</div>
-      <div id="movesInfo">이동: 0</div>
+
+    <div id="game-wrapper">
+        <div id="game-container"></div>
     </div>
-    <button id="undoBtn" tabindex="-1">↩ 되돌리기</button>
-  </div>
 
-  <div id="gameArea">
-    <canvas id="gameCanvas"></canvas>
-  </div>
-
-  <div id="hint">스와이프로 고양이를 움직여요</div>
-
-  <div id="winOverlay">
-    <div class="winCard">
-      <div class="winStars">⭐⭐⭐</div>
-      <div class="winTitle">레벨 클리어!</div>
-      <div class="winSub" id="winSubText">이동 횟수: 0</div>
-      <button class="winBtn btnPrimary" id="retryBtn" tabindex="-1">🔄 다시 풀기</button>
-      <button class="winBtn btnSecondary" tabindex="-1">📢 광고 보고 다음 레벨</button>
+    <div id="msg-overlay">
+        <div id="msg-box">
+            <div class="msg-stars">⭐⭐⭐</div>
+            <div class="msg-title">레벨 클리어!</div>
+            <div class="msg-sub" id="msg-sub">이동 횟수: 0</div>
+            <button class="msg-btn msg-btn-retry" tabindex="-1" onclick="resetLevel()">🔄 다시 풀기</button>
+            <button class="msg-btn msg-btn-next" tabindex="-1">📢 광고 보고 다음 레벨</button>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // ===== 타일 상수 =====
-    const W  = 1;  // wall
-    const F  = 0;  // floor
-    const B  = 2;  // yarn ball (box)
-    const T  = 3;  // target (house)
-    const P  = 4;  // player (cat)
-    const BT = 5;  // yarn on target
-    const PT = 6;  // player on target
+    <script>
+        const goalSVG = `<svg viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'>
+  <defs>
+    <linearGradient id='roofGrad' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#e06a1a'/>
+      <stop offset='100%' stop-color='#8b3a08'/>
+    </linearGradient>
+    <linearGradient id='wallGrad' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#ffe066'/>
+      <stop offset='100%' stop-color='#c89a10'/>
+    </linearGradient>
+    <linearGradient id='doorGrad' x1='0' y1='0' x2='0' y2='1'>
+      <stop offset='0%' stop-color='#4a2800'/>
+      <stop offset='100%' stop-color='#1a0a00'/>
+    </linearGradient>
+  </defs>
+  <!-- 굴뚝 -->
+  <rect x='33' y='10' width='5' height='10' fill='#7a3006' stroke='#1a0500' stroke-width='1'/>
+  <rect x='32' y='9' width='7' height='3' rx='1' fill='#5a2004' stroke='#1a0500' stroke-width='1'/>
+  <!-- 지붕 -->
+  <polygon points='25,5 3,27 47,27' fill='url(#roofGrad)' stroke='#1a0500' stroke-width='2' stroke-linejoin='round'/>
+  <!-- 지붕 하이라이트 -->
+  <polyline points='25,7 5,26' stroke='rgba(255,255,255,0.25)' stroke-width='1.5' fill='none'/>
+  <!-- 벽 -->
+  <rect x='9' y='26' width='32' height='20' fill='url(#wallGrad)' stroke='#1a0500' stroke-width='2'/>
+  <!-- 벽 하이라이트 -->
+  <rect x='9' y='26' width='32' height='4' fill='rgba(255,255,255,0.15)'/>
+  <!-- 창문 왼쪽 -->
+  <rect x='12' y='30' width='8' height='7' rx='1' fill='#aad4f5' stroke='#1a0500' stroke-width='1.5'/>
+  <line x1='16' y1='30' x2='16' y2='37' stroke='#1a0500' stroke-width='1'/>
+  <line x1='12' y1='33.5' x2='20' y2='33.5' stroke='#1a0500' stroke-width='1'/>
+  <!-- 문 -->
+  <rect x='20' y='32' width='10' height='14' rx='1' fill='url(#doorGrad)' stroke='#1a0500' stroke-width='1.5'/>
+  <circle cx='28.5' cy='39' r='1' fill='#f7d12a'/>
+  <!-- 문 아치 하이라이트 -->
+  <rect x='20' y='32' width='10' height='3' rx='1' fill='rgba(255,255,255,0.1)'/>
+</svg>`;
 
-    // ===== 레벨 데이터 =====
-    // Level 1: 7x7, yarn at (3,3), target at (2,2), player at (4,2)
-    // Solution: right, right, up, left (push yarn left), down, left, up (push yarn up to target) = 7 moves
-    const LEVELS = [
-      {
-        name: 'LEVEL 1',
-        map: [
-          [W, W, W, W, W, W, W],
-          [W, F, F, F, F, F, W],
-          [W, F, T, F, F, F, W],
-          [W, F, F, B, F, F, W],
-          [W, F, P, F, F, F, W],
-          [W, F, F, F, F, F, W],
-          [W, W, W, W, W, W, W],
-        ]
-      }
-    ];
 
-    // ===== 게임 상태 =====
-    let map = [];
-    let player = { row: 0, col: 0 };
-    let moves = 0;
-    let history = [];
-    let currentLevel = 0;
-    let won = false;
+        const levels = [
+            [
+                "xWWWWWxxxx",
+                "xW...Wxxxx",
+                "xW.B.Wxxxx",
+                "xW.B.WWWWW",
+                "WW......GW",
+                "WW......GW",
+                "xWP.B...GW",
+                "xWWWWWWWWW"
+            ]
+        ];
 
-    function initLevel(idx) {
-      const lvl = LEVELS[idx];
-      map = lvl.map.map(r => [...r]);
-      moves = 0;
-      history = [];
-      won = false;
-      for (let r = 0; r < map.length; r++)
-        for (let c = 0; c < map[r].length; c++)
-          if (map[r][c] === P || map[r][c] === PT)
-            player = { row: r, col: c };
-      document.getElementById('levelInfo').textContent = lvl.name;
-      updateUI();
-      render();
-    }
+        let currentLevel = 0;
+        let gameState = [];
+        let playerPos = {x: 0, y: 0};
+        let history = [];
+        let moveCount = 0;
 
-    // ===== 이동 로직 =====
-    function move(dr, dc) {
-      if (won) return;
-      const nr = player.row + dr;
-      const nc = player.col + dc;
-      if (nr < 0 || nr >= map.length || nc < 0 || nc >= map[0].length) return;
-      const cell = map[nr][nc];
-      if (cell === W) return;
-
-      if (cell === B || cell === BT) {
-        const br = nr + dr;
-        const bc = nc + dc;
-        if (br < 0 || br >= map.length || bc < 0 || bc >= map[0].length) return;
-        const bcell = map[br][bc];
-        if (bcell === W || bcell === B || bcell === BT) return;
-        saveState();
-        map[nr][nc] = (cell === BT) ? T : F;
-        map[br][bc] = (bcell === T) ? BT : B;
-      } else {
-        saveState();
-      }
-
-      map[player.row][player.col] = (map[player.row][player.col] === PT) ? T : F;
-      map[nr][nc] = (map[nr][nc] === T) ? PT : P;
-      player = { row: nr, col: nc };
-      moves++;
-      updateUI();
-      render();
-      checkWin();
-    }
-
-    function saveState() {
-      history.push({ map: map.map(r => [...r]), player: { ...player }, moves });
-      if (history.length > 200) history.shift();
-    }
-
-    function undo() {
-      if (history.length === 0 || won) return;
-      const prev = history.pop();
-      map = prev.map;
-      player = prev.player;
-      moves = prev.moves;
-      updateUI();
-      render();
-    }
-
-    function checkWin() {
-      for (let r = 0; r < map.length; r++)
-        for (let c = 0; c < map[r].length; c++)
-          if (map[r][c] === T || map[r][c] === PT) return;
-      won = true;
-      setTimeout(showWin, 300);
-    }
-
-    function showWin() {
-      document.getElementById('winSubText').textContent = `이동 횟수: ${moves}`;
-      document.getElementById('winOverlay').classList.add('show');
-    }
-
-    function updateUI() {
-      document.getElementById('movesInfo').textContent = `이동: ${moves}`;
-    }
-
-    // ===== 캔버스 & 렌더링 =====
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let CELL = 48;
-
-    function setupCanvas() {
-      const rows = LEVELS[currentLevel].map.length;
-      const cols = LEVELS[currentLevel].map[0].length;
-      const aw = window.innerWidth - 24;
-      const ah = window.innerHeight - 130;
-      CELL = Math.floor(Math.min(aw / cols, ah / rows));
-      CELL = Math.max(36, Math.min(72, CELL));
-      canvas.width  = cols * CELL;
-      canvas.height = rows * CELL;
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let r = 0; r < map.length; r++) {
-        for (let c = 0; c < map[r].length; c++) {
-          const x = c * CELL, y = r * CELL;
-          const cell = map[r][c];
-          if (cell !== W) drawFloor(x, y);
-          if (cell === W)  drawWall(x, y);
-          if (cell === T || cell === PT) drawTarget(x, y);
-          if (cell === B)  drawYarn(x, y, false);
-          if (cell === BT) drawYarn(x, y, true);
-          if (cell === P || cell === PT) drawCat(x, y);
+        function initLevel(idx) {
+            const raw = levels[idx];
+            gameState = raw.map(row => row.split(''));
+            history = [];
+            moveCount = 0;
+            document.getElementById('msg-overlay').classList.remove('show');
+            render();
+            autoScale();
         }
-      }
-    }
 
-    // ===== 픽셀아트 스프라이트 =====
-    function drawFloor(x, y) {
-      ctx.fillStyle = '#d4b486';
-      ctx.fillRect(x, y, CELL, CELL);
-      // 점무늬
-      ctx.fillStyle = '#c4a070';
-      const d = Math.max(2, Math.floor(CELL / 16));
-      const g = Math.floor(CELL / 4);
-      for (let dy = g; dy < CELL; dy += g)
-        for (let dx = g; dx < CELL; dx += g)
-          ctx.fillRect(x + dx - 1, y + dy - 1, d, d);
-    }
+        function render() {
+            const container = document.getElementById('game-container');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${gameState[0].length}, var(--cell-size))`;
 
-    function drawWall(x, y) {
-      const p = Math.max(1, Math.floor(CELL / 14));
-      // 벽 기본색
-      ctx.fillStyle = '#2a120a';
-      ctx.fillRect(x, y, CELL, CELL);
-      // 벽돌 2줄
-      const bh = Math.floor(CELL * 0.42);
-      const my = Math.floor(CELL * 0.5);
-      // 1번째 줄
-      ctx.fillStyle = '#7a3010';
-      ctx.fillRect(x + p, y + p, Math.floor(CELL * 0.42), bh - p * 2);
-      ctx.fillRect(x + Math.floor(CELL * 0.55), y + p, Math.floor(CELL * 0.42), bh - p * 2);
-      // 밝은 상단 하이라이트
-      ctx.fillStyle = '#a04828';
-      ctx.fillRect(x + p, y + p, Math.floor(CELL * 0.42), p);
-      ctx.fillRect(x + Math.floor(CELL * 0.55), y + p, Math.floor(CELL * 0.42), p);
-      // 2번째 줄 (엇갈림)
-      ctx.fillStyle = '#7a3010';
-      ctx.fillRect(x, my + p, Math.floor(CELL * 0.18), bh - p * 2);
-      ctx.fillRect(x + Math.floor(CELL * 0.24), my + p, Math.floor(CELL * 0.48), bh - p * 2);
-      ctx.fillRect(x + Math.floor(CELL * 0.78), my + p, Math.floor(CELL * 0.22), bh - p * 2);
-      ctx.fillStyle = '#a04828';
-      ctx.fillRect(x, my + p, Math.floor(CELL * 0.18), p);
-      ctx.fillRect(x + Math.floor(CELL * 0.24), my + p, Math.floor(CELL * 0.48), p);
-      ctx.fillRect(x + Math.floor(CELL * 0.78), my + p, Math.floor(CELL * 0.22), p);
-    }
+            gameState.forEach((row, y) => {
+                row.forEach((cell, x) => {
+                    const div = document.createElement('div');
+                    div.className = 'cell';
 
-    function drawTarget(x, y) {
-      // 작은 집 실루엣 (Push Push 스타일)
-      const cx = x + CELL / 2;
-      const cy = y + CELL / 2;
-      const s = CELL * 0.3;
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = Math.max(2, Math.floor(CELL / 18));
-      ctx.lineJoin = 'round';
-      // 집 몸체
-      ctx.strokeRect(cx - s * 0.65, cy - s * 0.2, s * 1.3, s);
-      // 지붕
-      ctx.beginPath();
-      ctx.moveTo(cx - s * 0.8, cy - s * 0.2);
-      ctx.lineTo(cx, cy - s * 1.1);
-      ctx.lineTo(cx + s * 0.8, cy - s * 0.2);
-      ctx.stroke();
-      // 문
-      ctx.strokeRect(cx - s * 0.22, cy + s * 0.8 - s * 0.55, s * 0.44, s * 0.55);
-    }
+                    if (cell === 'x') {
+                        div.classList.add('void');
+                    } else if (cell === 'W') {
+                        div.classList.add('wall');
+                    } else {
+                        div.classList.add('floor');
 
-    function drawYarn(x, y, onTarget) {
-      const cx = x + CELL / 2;
-      const cy = y + CELL / 2;
-      const r = CELL * 0.34;
-      const col  = onTarget ? '#50fa7b' : '#ff6b9d';
-      const dark = onTarget ? '#27ae60' : '#bb2255';
-      // 그림자
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.beginPath();
-      ctx.ellipse(cx + 2, cy + r * 0.55, r * 0.75, r * 0.22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // 볼
-      ctx.fillStyle = col;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-      // 실 무늬 (클리핑)
-      ctx.save();
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = Math.max(1.5, CELL / 26);
-      // 가로 물결선 2개
-      ctx.beginPath();
-      ctx.moveTo(cx - r, cy - r * 0.25);
-      ctx.bezierCurveTo(cx - r*0.3, cy - r*0.75, cx + r*0.3, cy - r*0.45, cx + r, cy - r*0.15);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx - r, cy + r * 0.25);
-      ctx.bezierCurveTo(cx - r*0.3, cy + r*0.65, cx + r*0.3, cy + r*0.3, cx + r, cy + r*0.5);
-      ctx.stroke();
-      // 세로 물결선 1개
-      ctx.beginPath();
-      ctx.moveTo(cx - r*0.2, cy - r);
-      ctx.bezierCurveTo(cx - r*0.65, cy - r*0.3, cx - r*0.3, cy + r*0.3, cx - r*0.5, cy + r);
-      ctx.stroke();
-      ctx.restore();
-      // 외곽선
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = Math.max(1.5, CELL / 30);
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-      // 하이라이트
-      ctx.fillStyle = 'rgba(255,255,255,0.42)';
-      ctx.beginPath(); ctx.arc(cx - r*0.28, cy - r*0.28, r*0.18, 0, Math.PI*2); ctx.fill();
-    }
+                        const orig = levels[currentLevel][y][x];
+                        if (orig === 'G' || orig === 'X') {
+                            const icon = document.createElement('div');
+                            icon.className = 'goal-icon entity';
+                            icon.innerHTML = goalSVG;
+                            div.appendChild(icon);
+                        }
 
-    function drawCat(x, y) {
-      const cx = x + CELL / 2;
-      const cy = y + CELL / 2;
-      const r = CELL * 0.3;
-      // 몸통
-      ctx.fillStyle = '#ff9500';
-      ctx.beginPath(); ctx.arc(cx, cy + r*0.15, r * 1.05, 0, Math.PI*2); ctx.fill();
-      // 귀 (왼쪽)
-      ctx.fillStyle = '#ff9500';
-      ctx.beginPath();
-      ctx.moveTo(cx - r*0.45, cy - r*0.55);
-      ctx.lineTo(cx - r*0.9,  cy - r*1.15);
-      ctx.lineTo(cx - r*0.05, cy - r*0.88);
-      ctx.closePath(); ctx.fill();
-      // 귀 (오른쪽)
-      ctx.beginPath();
-      ctx.moveTo(cx + r*0.45, cy - r*0.55);
-      ctx.lineTo(cx + r*0.9,  cy - r*1.15);
-      ctx.lineTo(cx + r*0.05, cy - r*0.88);
-      ctx.closePath(); ctx.fill();
-      // 귀 속 (분홍)
-      ctx.fillStyle = '#ff6eb4';
-      ctx.beginPath();
-      ctx.moveTo(cx - r*0.48, cy - r*0.6);
-      ctx.lineTo(cx - r*0.75, cy - r*0.98);
-      ctx.lineTo(cx - r*0.15, cy - r*0.82);
-      ctx.closePath(); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(cx + r*0.48, cy - r*0.6);
-      ctx.lineTo(cx + r*0.75, cy - r*0.98);
-      ctx.lineTo(cx + r*0.15, cy - r*0.82);
-      ctx.closePath(); ctx.fill();
-      // 머리
-      ctx.fillStyle = '#ff9500';
-      ctx.beginPath(); ctx.arc(cx, cy - r*0.12, r*0.82, 0, Math.PI*2); ctx.fill();
-      // 이마 줄무늬
-      ctx.strokeStyle = '#cc7700';
-      ctx.lineWidth = Math.max(1.5, CELL / 24);
-      for (let i = -1; i <= 1; i++) {
-        ctx.beginPath();
-        ctx.moveTo(cx + i*r*0.18, cy - r*0.78);
-        ctx.lineTo(cx + i*r*0.13, cy - r*0.42);
-        ctx.stroke();
-      }
-      // 눈
-      const eyeY = cy - r*0.08;
-      const eyeR = r*0.13;
-      ctx.fillStyle = '#1a1a1a';
-      ctx.beginPath(); ctx.arc(cx - r*0.3, eyeY, eyeR, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + r*0.3, eyeY, eyeR, 0, Math.PI*2); ctx.fill();
-      // 눈 하이라이트
-      ctx.fillStyle = 'white';
-      ctx.beginPath(); ctx.arc(cx - r*0.26, eyeY - eyeR*0.3, eyeR*0.38, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + r*0.34, eyeY - eyeR*0.3, eyeR*0.38, 0, Math.PI*2); ctx.fill();
-      // 코
-      ctx.fillStyle = '#ff6eb4';
-      ctx.beginPath();
-      ctx.moveTo(cx,           cy + r*0.12);
-      ctx.lineTo(cx - r*0.1,   cy + r*0.22);
-      ctx.lineTo(cx + r*0.1,   cy + r*0.22);
-      ctx.closePath(); ctx.fill();
-      // 수염
-      ctx.strokeStyle = 'rgba(100,60,0,0.45)';
-      ctx.lineWidth = Math.max(1, CELL / 40);
-      [[- 1, 1], [-1, 1]].forEach(() => {}); // placeholder
-      ctx.beginPath(); ctx.moveTo(cx-r*0.1, cy+r*0.16); ctx.lineTo(cx-r*0.85, cy+r*0.04); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx-r*0.1, cy+r*0.22); ctx.lineTo(cx-r*0.85, cy+r*0.28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx+r*0.1, cy+r*0.16); ctx.lineTo(cx+r*0.85, cy+r*0.04); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx+r*0.1, cy+r*0.22); ctx.lineTo(cx+r*0.85, cy+r*0.28); ctx.stroke();
-      // 입
-      ctx.strokeStyle = '#cc7700';
-      ctx.lineWidth = Math.max(1, CELL / 36);
-      ctx.beginPath();
-      ctx.moveTo(cx, cy+r*0.22);
-      ctx.quadraticCurveTo(cx-r*0.18, cy+r*0.36, cx-r*0.28, cy+r*0.3);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(cx, cy+r*0.22);
-      ctx.quadraticCurveTo(cx+r*0.18, cy+r*0.36, cx+r*0.28, cy+r*0.3);
-      ctx.stroke();
-    }
+                        if (cell === 'B' || cell === 'X') {
+                            const b = document.createElement('div');
+                            b.className = 'ball entity';
+                            if (cell === 'X') b.classList.add('on-goal');
+                            const bImg = document.createElement('img');
+                            bImg.src = 'ball.png';
+                            bImg.className = 'ball-img';
+                            b.appendChild(bImg);
+                            div.appendChild(b);
+                        }
+                        if (cell === 'P') {
+                            const p = document.createElement('div');
+                            p.className = 'player entity';
+                            const pImg = document.createElement('img');
+                            pImg.src = 'cat.png';
+                            p.appendChild(pImg);
+                            div.appendChild(p);
+                            playerPos = {x, y};
+                        }
+                    }
+                    container.appendChild(div);
+                });
+            });
+            checkWin();
+        }
 
-    // ===== 터치 스와이프 =====
-    let tx = 0, ty = 0;
-    document.addEventListener('touchstart', e => {
-      tx = e.touches[0].clientX;
-      ty = e.touches[0].clientY;
-    }, { passive: true });
-    document.addEventListener('touchend', e => {
-      const dx = e.changedTouches[0].clientX - tx;
-      const dy = e.changedTouches[0].clientY - ty;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (Math.abs(dx) > 20) move(0, dx > 0 ? 1 : -1);
-      } else {
-        if (Math.abs(dy) > 20) move(dy > 0 ? 1 : -1, 0);
-      }
-    }, { passive: true });
+        function move(dx, dy) {
+            const nx = playerPos.x + dx;
+            const ny = playerPos.y + dy;
 
-    // 키보드 (테스트용)
-    document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowUp')    move(-1,  0);
-      if (e.key === 'ArrowDown')  move( 1,  0);
-      if (e.key === 'ArrowLeft')  move( 0, -1);
-      if (e.key === 'ArrowRight') move( 0,  1);
-      if (e.key === 'z' || e.key === 'Z') undo();
-    });
+            if (ny < 0 || ny >= gameState.length || nx < 0 || nx >= gameState[0].length) return;
+            const target = gameState[ny][nx];
+            if (target === 'W' || target === 'x') return;
 
-    // ===== 버튼 =====
-    document.getElementById('undoBtn').addEventListener('click', undo);
-    document.getElementById('retryBtn').addEventListener('click', () => {
-      document.getElementById('winOverlay').classList.remove('show');
-      initLevel(currentLevel);
-    });
+            const prevState = JSON.stringify(gameState);
 
-    // ===== 시작 =====
-    setupCanvas();
-    initLevel(currentLevel);
-  </script>
+            if (target === 'B' || target === 'X') {
+                const nnx = nx + dx, nny = ny + dy;
+                if (nny < 0 || nny >= gameState.length || nnx < 0 || nnx >= gameState[0].length) return;
+                const beyond = gameState[nny][nnx];
+                if (beyond === '.' || beyond === 'G') {
+                    history.push(prevState);
+                    gameState[nny][nnx] = (beyond === 'G') ? 'X' : 'B';
+                    updatePlayer(nx, ny);
+                }
+            } else {
+                history.push(prevState);
+                updatePlayer(nx, ny);
+            }
+            moveCount++;
+            render();
+        }
+
+        function updatePlayer(nx, ny) {
+            const orig = levels[currentLevel][playerPos.y][playerPos.x];
+            gameState[playerPos.y][playerPos.x] = (orig === 'G' || orig === 'X') ? 'G' : '.';
+            playerPos = {x: nx, y: ny};
+            gameState[ny][nx] = 'P';
+        }
+
+        function undoMove() {
+            if (!history.length) return;
+            gameState = JSON.parse(history.pop());
+            gameState.forEach((row, y) => {
+                row.forEach((cell, x) => {
+                    if (cell === 'P') playerPos = {x, y};
+                });
+            });
+            render();
+        }
+
+        function resetLevel() { initLevel(currentLevel); }
+
+        function checkWin() {
+            if (!gameState.some(row => row.includes('B'))) {
+                document.getElementById('msg-sub').textContent = `이동 횟수: ${moveCount}`;
+                document.getElementById('msg-overlay').classList.add('show');
+            }
+        }
+
+        function autoScale() {
+            const wrapper = document.getElementById('game-wrapper');
+            const winW = window.innerWidth * 0.95;
+            const winH = window.innerHeight * 0.72;
+            const container = document.getElementById('game-container');
+            const cols = gameState[0].length;
+            const rows = gameState.length;
+            const cellPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
+            const scale = Math.min(winW / (cols * cellPx), winH / (rows * cellPx), 1.2);
+            wrapper.style.transform = `scale(${scale})`;
+        }
+
+        // ===== 스와이프 =====
+        let tx = 0, ty = 0;
+        document.addEventListener('touchstart', e => {
+            tx = e.touches[0].clientX;
+            ty = e.touches[0].clientY;
+        }, { passive: true });
+        document.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - tx;
+            const dy = e.changedTouches[0].clientY - ty;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > 25) move(dx > 0 ? 1 : -1, 0);
+            } else {
+                if (Math.abs(dy) > 25) move(0, dy > 0 ? 1 : -1);
+            }
+        }, { passive: true });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp')    move(0, -1);
+            if (e.key === 'ArrowDown')  move(0,  1);
+            if (e.key === 'ArrowLeft')  move(-1, 0);
+            if (e.key === 'ArrowRight') move( 1, 0);
+            if (e.key.toLowerCase() === 'z') undoMove();
+            if (e.key.toLowerCase() === 'r') resetLevel();
+        });
+
+        window.addEventListener('resize', autoScale);
+        window.onload = () => initLevel(0);
+    </script>
 </body>
 </html>
