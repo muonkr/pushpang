@@ -228,7 +228,6 @@
     <div id="level-indicator">레벨 1 / 10</div>
 
     <div id="control-btns">
-        <button class="ctrl-btn" tabindex="-1" onclick="undoMove()">↩ 되돌리기</button>
         <button class="ctrl-btn" tabindex="-1" onclick="resetLevel()">🔄 다시 시작</button>
     </div>
 
@@ -335,18 +334,7 @@
 
         // ===== 레벨 데이터 (10개) =====
         const levels = [
-            // 레벨 1 - 털실 3개
-            [
-                "xWWWWWxxxx",
-                "xW...Wxxxx",
-                "xW.B.Wxxxx",
-                "xW.B.WWWWW",
-                "WW......GW",
-                "WW......GW",
-                "xWP.B...GW",
-                "xWWWWWWWWW"
-            ],
-            // 레벨 2 - 털실 2개, 대칭 직선 푸시
+            // 레벨 1 - 털실 2개, 직선 푸시 (최쉬움)
             [
                 "WWWWWWW",
                 "W.....W",
@@ -356,7 +344,7 @@
                 "W..P..W",
                 "WWWWWWW"
             ],
-            // 레벨 3 - 털실 2개, 코너 배치
+            // 레벨 2 - 털실 2개, 코너 배치
             [
                 "WWWWWWWW",
                 "W......W",
@@ -367,7 +355,7 @@
                 "W..P..GW",
                 "WWWWWWWW"
             ],
-            // 레벨 4 - 털실 2개, 우회 필요
+            // 레벨 3 - 털실 2개, 우회 필요
             [
                 "WWWWWWWW",
                 "W......W",
@@ -378,7 +366,7 @@
                 "W..P...W",
                 "WWWWWWWW"
             ],
-            // 레벨 5 - 털실 3개, 대칭
+            // 레벨 4 - 털실 3개, 대칭
             [
                 "WWWWWWWWW",
                 "W.......W",
@@ -388,63 +376,74 @@
                 "W...P...W",
                 "WWWWWWWWW"
             ],
-            // 레벨 6 - 털실 3개, 대각선 배치
+            // 레벨 5 - ㄴ자 방 + 털실 3개 (좁은 통로)
             [
-                "WWWWWWWW",
-                "W......W",
-                "W.B....W",
-                "W..B...W",
-                "W...B..W",
-                "WGG.G..W",
-                "W...P..W",
-                "WWWWWWWW"
+                "xWWWWWxxxx",
+                "xW...Wxxxx",
+                "xW.B.Wxxxx",
+                "xW.B.WWWWW",
+                "WW......GW",
+                "WW......GW",
+                "xWP.B...GW",
+                "xWWWWWWWWW"
             ],
-            // 레벨 7 - 털실 3개, 방 안쪽 배치
+            // 레벨 6 - L자 방 + 털실 3개, 상하 연결
             [
                 "xWWWWWWWx",
                 "xW.....Wx",
                 "xW.B.B.Wx",
-                "xW.....Wx",
-                "xW..B..Wx",
-                "xW.G.G.Wx",
-                "xW..G..Wx",
-                "xW..P..Wx",
-                "xWWWWWWWx"
+                "WWB....WW",
+                "W.......W",
+                "W.G.G.G.W",
+                "W...P...W",
+                "WWWWWWWWW"
             ],
-            // 레벨 8 - 털실 4개, 대칭
+            // 레벨 7 - 털실 4개, 중앙 기둥 + 모서리 목표
             [
                 "WWWWWWWWW",
                 "W.......W",
                 "W.B...B.W",
-                "W.......W",
+                "W...W...W",
                 "W.B...B.W",
                 "W.......W",
-                "W.GG.GG.W",
+                "WGG...GGW",
                 "W...P...W",
                 "WWWWWWWWW"
             ],
-            // 레벨 9 - 털실 4개, 순서 중요
+            // 레벨 8 - 털실 4개, 두 기둥 + 모서리 목표
             [
                 "WWWWWWWWW",
                 "W.......W",
-                "W...B...W",
-                "W.B...B.W",
-                "W...B...W",
-                "W.G...G.W",
-                "WG.....GW",
+                "W.B.W.B.W",
+                "W.......W",
+                "W.B.W.B.W",
+                "W.......W",
+                "WGG...GGW",
                 "W...P...W",
                 "WWWWWWWWW"
             ],
-            // 레벨 10 - 털실 5개, 최고 난이도
+            // 레벨 9 - 털실 4개, 측면 통로 장애물
+            [
+                "WWWWWWWWW",
+                "W.......W",
+                "WBW...WBW",
+                "W.W...W.W",
+                "W.......W",
+                "W..B.B..W",
+                "W.......W",
+                "WG.G.G.GW",
+                "W...P...W",
+                "WWWWWWWWW"
+            ],
+            // 레벨 10 - 털실 5개, 측면 기둥 + 복합
             [
                 "WWWWWWWWWW",
                 "W........W",
                 "W.B.B.B..W",
                 "W........W",
-                "W.B...B..W",
+                "WW.B..B..W",
                 "W........W",
-                "W.GG.GG..W",
-                "W...G....W",
+                "W.GG.GGG.W",
                 "W....P...W",
                 "WWWWWWWWWW"
             ]
@@ -547,12 +546,13 @@
             const ny = playerPos.y + dy;
             if (ny < 0 || ny >= gameState.length || nx < 0 || nx >= gameState[0].length) return;
             const target = gameState[ny][nx];
-            if (target === 'W' || target === 'x') return;
+            // G(빈 집): 고양이 진입 불가 / X(공이 들어간 집): 잠금 - 이동 불가
+            if (target === 'W' || target === 'x' || target === 'G' || target === 'X') return;
 
             const prevState = JSON.stringify(gameState);
             let moved = false;
 
-            if (target === 'B' || target === 'X') {
+            if (target === 'B') {
                 const nnx = nx + dx, nny = ny + dy;
                 if (nny < 0 || nny >= gameState.length || nnx < 0 || nnx >= gameState[0].length) return;
                 const beyond = gameState[nny][nnx];
