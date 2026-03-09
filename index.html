@@ -294,6 +294,11 @@
         }
         function soundMove() { playTone(440, 0.06, 'square', 0.12); }
         function soundPush() { playTone(300, 0.1,  'square', 0.18); }
+        function soundGoal() {
+            [784, 988, 1175].forEach((f, i) =>
+                setTimeout(() => playTone(f, 0.22, 'sine', 0.2), i * 75)
+            );
+        }
         function soundWin()  {
             [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.18, 'sine', 0.22), i * 120));
         }
@@ -398,29 +403,33 @@
                 "W...P...W",
                 "WWWWWWWWW"
             ],
-            // 레벨 7 - 털실 4개, 중앙 기둥 + 모서리 목표
+            // 레벨 7 - ㄴ자 방 + 털실 4개 (좁은 상단 + 넓은 하단)
             [
-                "WWWWWWWWW",
-                "W.......W",
-                "W.B...B.W",
-                "W...W...W",
-                "W.B...B.W",
-                "W.......W",
-                "WGG...GGW",
-                "W...P...W",
-                "WWWWWWWWW"
+                "WWWWWWxxxx",
+                "W....Wxxxx",
+                "W.B.BWxxxx",
+                "W....Wxxxx",
+                "W....WWWWW",
+                "W........W",
+                "W.B....B.W",
+                "W........W",
+                "WG..GG..GW",
+                "W....P...W",
+                "WWWWWWWWWW"
             ],
-            // 레벨 8 - 털실 4개, 두 기둥 + 모서리 목표
+            // 레벨 8 - 역ㄴ자 방 + 털실 4개 (좁은 상단 우측 + 넓은 하단)
             [
-                "WWWWWWWWW",
-                "W.......W",
-                "W.B.W.B.W",
-                "W.......W",
-                "W.B.W.B.W",
-                "W.......W",
-                "WGG...GGW",
-                "W...P...W",
-                "WWWWWWWWW"
+                "xxxxWWWWWW",
+                "xxxxW....W",
+                "xxxxW.B.BW",
+                "xxxxW....W",
+                "WWWWW....W",
+                "W........W",
+                "W.B....B.W",
+                "W........W",
+                "WG.G..G.GW",
+                "W....P...W",
+                "WWWWWWWWWW"
             ],
             // 레벨 9 - 털실 4개, 측면 통로 장애물
             [
@@ -435,15 +444,18 @@
                 "W...P...W",
                 "WWWWWWWWW"
             ],
-            // 레벨 10 - 털실 5개, 측면 기둥 + 복합
+            // 레벨 10 - ㄴ자 방 + 털실 5개 (최고난이도)
             [
-                "WWWWWWWWWW",
+                "xxxWWWWWWW",
+                "xxxW.....W",
+                "xxxW.B.B.W",
+                "xxxW.....W",
+                "WWWW.....W",
                 "W........W",
                 "W.B.B.B..W",
                 "W........W",
-                "WW.B..B..W",
-                "W........W",
-                "W.GG.GGG.W",
+                "WG.G.G.G.W",
+                "WG.......W",
                 "W....P...W",
                 "WWWWWWWWWW"
             ]
@@ -558,10 +570,12 @@
                 const beyond = gameState[nny][nnx];
                 if (beyond === '.' || beyond === 'G') {
                     moveHistory.push(prevState);
-                    gameState[nny][nnx] = (beyond === 'G') ? 'X' : 'B';
+                    const isGoal = beyond === 'G';
+                    gameState[nny][nnx] = isGoal ? 'X' : 'B';
                     updatePlayer(nx, ny);
                     moved = true;
-                    soundPush(); vibrate(30);
+                    if (isGoal) { soundGoal(); vibrate([20, 20, 60]); }
+                    else { soundPush(); vibrate(30); }
                 }
             } else {
                 moveHistory.push(prevState);
