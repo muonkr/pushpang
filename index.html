@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>꾹꾹팡</title>
     <style>
         :root {
@@ -15,19 +15,42 @@
             --cell-size: 50px;
         }
 
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
-            padding: 0;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
             background-color: var(--sky-blue);
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.9' transform='scale(0.5)'/%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.7' transform='translate(150, 100) scale(0.3)'/%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.8' transform='translate(80, 200) scale(0.4)'/%3E%3Cpolygon points='20,2 24,12 36,12 26,20 30,32 20,24 10,32 14,20 4,12 16,12' fill='%23fff' opacity='0.6' transform='translate(250, 250) scale(0.2)'/%3E%3C/svg%3E");
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            min-height: 100dvh;
             font-family: 'Arial Black', sans-serif;
             overflow: hidden;
             touch-action: none;
+        }
+
+        /* ===== 사운드 토글 버튼 ===== */
+        #sound-btn {
+            position: fixed;
+            top: calc(env(safe-area-inset-top, 0px) + 12px);
+            right: 16px;
+            z-index: 500;
+            background: rgba(0,0,0,0.28);
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #game-wrapper {
@@ -47,10 +70,7 @@
             position: relative;
         }
 
-        .void {
-            background: transparent;
-            z-index: 20;
-        }
+        .void { background: transparent; z-index: 20; }
 
         .floor {
             background-color: var(--floor-sand);
@@ -61,14 +81,10 @@
         .wall {
             background-color: var(--brick-red);
             background-image:
-                /* 가로 모르타르 줄 */
                 linear-gradient(transparent 48%, #6a1206 48%, #6a1206 52%, transparent 52%),
-                /* 세로 모르타르 줄 - 1행 */
                 linear-gradient(90deg, transparent 48%, #6a1206 48%, #6a1206 52%, transparent 52%),
-                /* 전체 그라데이션 */
                 linear-gradient(160deg, rgba(255,255,255,0.12) 0%, transparent 50%, rgba(0,0,0,0.18) 100%);
             border: 2px solid #1a0500;
-            box-sizing: border-box;
             box-shadow:
                 inset 5px 5px 0px var(--brick-highlight),
                 inset -5px -5px 0px var(--brick-shadow),
@@ -90,11 +106,10 @@
         .player img { width: 100%; height: 100%; z-index: 10; object-fit: contain; }
         .ball-img   { width: 95%; height: 95%; object-fit: contain; }
 
-        /* 털실 공 */
         .ball { z-index: 5; }
         .ball.on-goal .ball-img { filter: brightness(1.2) saturate(1.5) hue-rotate(100deg); transform: scale(0.9); }
 
-
+        /* ===== 클리어 모달 ===== */
         #msg-overlay {
             display: none;
             position: fixed;
@@ -117,73 +132,180 @@
         .msg-stars { font-size: 34px; letter-spacing: 4px; margin-bottom: 10px; }
         .msg-title { font-size: 22px; font-weight: 900; color: #1a3a5c; margin-bottom: 6px; }
         .msg-sub { font-size: 13px; color: #999; margin-bottom: 22px; }
+        .msg-best { font-size: 12px; color: #f7a000; margin-top: -16px; margin-bottom: 18px; }
         .msg-btn {
             width: 100%; padding: 13px;
             border: none; border-radius: 12px;
             font-size: 15px; font-weight: 700;
             cursor: pointer; outline: none;
             margin-bottom: 8px;
+            -webkit-tap-highlight-color: transparent;
         }
         .msg-btn:active { opacity: 0.8; }
         .msg-btn-retry { background: #ff9500; color: white; }
         .msg-btn-next  { background: #5baad8; color: white; }
+
+        /* ===== 종료 확인 모달 ===== */
+        #exit-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #exit-overlay.show { display: flex; }
+        #exit-box {
+            background: #fff;
+            border-radius: 24px;
+            padding: 32px 28px;
+            text-align: center;
+            width: 76%;
+            max-width: 290px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+        }
+        .exit-title { font-size: 20px; font-weight: 900; color: #1a3a5c; margin-bottom: 8px; }
+        .exit-sub { font-size: 13px; color: #999; margin-bottom: 24px; }
+        .exit-btns { display: flex; gap: 10px; }
+        .exit-btn {
+            flex: 1; padding: 13px;
+            border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer; outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .exit-btn:active { opacity: 0.8; }
+        .exit-btn-cancel { background: #eee; color: #555; }
+        .exit-btn-confirm { background: #e05050; color: white; }
     </style>
 </head>
 <body>
+
+    <button id="sound-btn" tabindex="-1" onclick="toggleSound()">🔊</button>
 
     <div id="game-wrapper">
         <div id="game-container"></div>
     </div>
 
+    <!-- 클리어 모달 -->
     <div id="msg-overlay">
         <div id="msg-box">
             <div class="msg-stars">⭐⭐⭐</div>
             <div class="msg-title">레벨 클리어!</div>
             <div class="msg-sub" id="msg-sub">이동 횟수: 0</div>
+            <div class="msg-best" id="msg-best"></div>
             <button class="msg-btn msg-btn-retry" tabindex="-1" onclick="resetLevel()">🔄 다시 풀기</button>
-            <button class="msg-btn msg-btn-next" tabindex="-1">📢 광고 보고 다음 레벨</button>
+            <button class="msg-btn msg-btn-next" tabindex="-1">📢 광고 ��고 다음 레벨</button>
+        </div>
+    </div>
+
+    <!-- 종료 확인 모달 -->
+    <div id="exit-overlay">
+        <div id="exit-box">
+            <div class="exit-title">게임을 종료할까요?</div>
+            <div class="exit-sub">지금까지의 진행 상황은<br>저장되어 있어요</div>
+            <div class="exit-btns">
+                <button class="exit-btn exit-btn-cancel" tabindex="-1" onclick="closeExitModal()">계속하기</button>
+                <button class="exit-btn exit-btn-confirm" tabindex="-1" onclick="confirmExit()">종료하기</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // ===== 유저 식별자 =====
+        function getUserId() {
+            let uid = localStorage.getItem('pawpush_uid');
+            if (!uid) {
+                uid = 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+                localStorage.setItem('pawpush_uid', uid);
+            }
+            return uid;
+        }
+        const userId = getUserId();
+
+        // ===== 사운드 (Web Audio API) =====
+        let audioCtx = null;
+        let soundEnabled = localStorage.getItem('pawpush_sound') !== 'off';
+
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+
+        function playTone(freq, dur, type = 'square', vol = 0.18) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + dur);
+            } catch(e) {}
+        }
+
+        function soundMove()  { playTone(440, 0.06, 'square', 0.12); }
+        function soundPush()  { playTone(300, 0.1,  'square', 0.18); }
+        function soundWin()   {
+            const notes = [523, 659, 784, 1047];
+            notes.forEach((f, i) => setTimeout(() => playTone(f, 0.18, 'sine', 0.22), i * 120));
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('pawpush_sound', soundEnabled ? 'on' : 'off');
+            document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) playTone(523, 0.1, 'sine', 0.15);
+        }
+
+        // 백그라운드 전환 시 오디오 일시정지
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && audioCtx) {
+                audioCtx.suspend();
+            } else if (!document.hidden && audioCtx && soundEnabled) {
+                audioCtx.resume();
+            }
+        });
+
+        // ===== 햅틱 =====
+        function vibrate(pattern) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
+
+        // ===== goalSVG =====
         const goalSVG = `<svg viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'>
   <defs>
     <linearGradient id='roofGrad' x1='0' y1='0' x2='0' y2='1'>
-      <stop offset='0%' stop-color='#e06a1a'/>
-      <stop offset='100%' stop-color='#8b3a08'/>
+      <stop offset='0%' stop-color='#e06a1a'/><stop offset='100%' stop-color='#8b3a08'/>
     </linearGradient>
     <linearGradient id='wallGrad' x1='0' y1='0' x2='0' y2='1'>
-      <stop offset='0%' stop-color='#ffe066'/>
-      <stop offset='100%' stop-color='#c89a10'/>
+      <stop offset='0%' stop-color='#ffe066'/><stop offset='100%' stop-color='#c89a10'/>
     </linearGradient>
     <linearGradient id='doorGrad' x1='0' y1='0' x2='0' y2='1'>
-      <stop offset='0%' stop-color='#4a2800'/>
-      <stop offset='100%' stop-color='#1a0a00'/>
+      <stop offset='0%' stop-color='#4a2800'/><stop offset='100%' stop-color='#1a0a00'/>
     </linearGradient>
   </defs>
-  <!-- 굴뚝 -->
   <rect x='33' y='10' width='5' height='10' fill='#7a3006' stroke='#1a0500' stroke-width='1'/>
   <rect x='32' y='9' width='7' height='3' rx='1' fill='#5a2004' stroke='#1a0500' stroke-width='1'/>
-  <!-- 지붕 -->
   <polygon points='25,5 3,27 47,27' fill='url(#roofGrad)' stroke='#1a0500' stroke-width='2' stroke-linejoin='round'/>
-  <!-- 지붕 하이라이트 -->
   <polyline points='25,7 5,26' stroke='rgba(255,255,255,0.25)' stroke-width='1.5' fill='none'/>
-  <!-- 벽 -->
   <rect x='9' y='26' width='32' height='20' fill='url(#wallGrad)' stroke='#1a0500' stroke-width='2'/>
-  <!-- 벽 하이라이트 -->
   <rect x='9' y='26' width='32' height='4' fill='rgba(255,255,255,0.15)'/>
-  <!-- 창문 왼쪽 -->
   <rect x='12' y='30' width='8' height='7' rx='1' fill='#aad4f5' stroke='#1a0500' stroke-width='1.5'/>
   <line x1='16' y1='30' x2='16' y2='37' stroke='#1a0500' stroke-width='1'/>
   <line x1='12' y1='33.5' x2='20' y2='33.5' stroke='#1a0500' stroke-width='1'/>
-  <!-- 문 -->
   <rect x='20' y='32' width='10' height='14' rx='1' fill='url(#doorGrad)' stroke='#1a0500' stroke-width='1.5'/>
   <circle cx='28.5' cy='39' r='1' fill='#f7d12a'/>
-  <!-- 문 아치 하이라이트 -->
   <rect x='20' y='32' width='10' height='3' rx='1' fill='rgba(255,255,255,0.1)'/>
 </svg>`;
 
-
+        // ===== 레벨 데이터 =====
         const levels = [
             [
                 "xWWWWWxxxx",
@@ -197,22 +319,49 @@
             ]
         ];
 
+        // ===== 게임 상태 =====
         let currentLevel = 0;
         let gameState = [];
         let playerPos = {x: 0, y: 0};
         let history = [];
         let moveCount = 0;
 
+        // ===== localStorage 저장/불러오기 =====
+        function saveProgress() {
+            localStorage.setItem('pawpush_level', currentLevel);
+        }
+
+        function getBestMoves(level) {
+            return parseInt(localStorage.getItem(`pawpush_best_${level}`)) || null;
+        }
+
+        function saveBestMoves(level, moves) {
+            const best = getBestMoves(level);
+            if (best === null || moves < best) {
+                localStorage.setItem(`pawpush_best_${level}`, moves);
+                return true; // 신기록
+            }
+            return false;
+        }
+
+        function loadSavedLevel() {
+            return parseInt(localStorage.getItem('pawpush_level')) || 0;
+        }
+
+        // ===== 게임 초기화 =====
         function initLevel(idx) {
-            const raw = levels[idx];
+            currentLevel = Math.min(idx, levels.length - 1);
+            const raw = levels[currentLevel];
             gameState = raw.map(row => row.split(''));
             history = [];
             moveCount = 0;
             document.getElementById('msg-overlay').classList.remove('show');
+            saveProgress();
             render();
             autoScale();
         }
 
+        // ===== 렌더링 =====
         function render() {
             const container = document.getElementById('game-container');
             container.innerHTML = '';
@@ -264,6 +413,7 @@
             checkWin();
         }
 
+        // ===== 이동 =====
         function move(dx, dy) {
             const nx = playerPos.x + dx;
             const ny = playerPos.y + dy;
@@ -273,6 +423,7 @@
             if (target === 'W' || target === 'x') return;
 
             const prevState = JSON.stringify(gameState);
+            let moved = false;
 
             if (target === 'B' || target === 'X') {
                 const nnx = nx + dx, nny = ny + dy;
@@ -282,13 +433,22 @@
                     history.push(prevState);
                     gameState[nny][nnx] = (beyond === 'G') ? 'X' : 'B';
                     updatePlayer(nx, ny);
+                    moved = true;
+                    soundPush();
+                    vibrate(30);
                 }
             } else {
                 history.push(prevState);
                 updatePlayer(nx, ny);
+                moved = true;
+                soundMove();
+                vibrate(10);
             }
-            moveCount++;
-            render();
+
+            if (moved) {
+                moveCount++;
+                render();
+            }
         }
 
         function updatePlayer(nx, ny) {
@@ -311,18 +471,26 @@
 
         function resetLevel() { initLevel(currentLevel); }
 
+        // ===== 클리어 판정 =====
         function checkWin() {
             if (!gameState.some(row => row.includes('B'))) {
+                const isNew = saveBestMoves(currentLevel, moveCount);
+                const best = getBestMoves(currentLevel);
                 document.getElementById('msg-sub').textContent = `이동 횟수: ${moveCount}`;
+                document.getElementById('msg-best').textContent = isNew
+                    ? '🏆 신기록!'
+                    : `최고 기록: ${best}번`;
                 document.getElementById('msg-overlay').classList.add('show');
+                soundWin();
+                vibrate([80, 40, 80, 40, 120]);
             }
         }
 
+        // ===== 스케일 =====
         function autoScale() {
             const wrapper = document.getElementById('game-wrapper');
             const winW = window.innerWidth * 0.95;
-            const winH = window.innerHeight * 0.72;
-            const container = document.getElementById('game-container');
+            const winH = window.innerHeight * 0.78;
             const cols = gameState[0].length;
             const rows = gameState.length;
             const cellPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
@@ -346,6 +514,7 @@
             }
         }, { passive: true });
 
+        // ===== 키보드 =====
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowUp')    move(0, -1);
             if (e.key === 'ArrowDown')  move(0,  1);
@@ -355,8 +524,35 @@
             if (e.key.toLowerCase() === 'r') resetLevel();
         });
 
+        // ===== 뒤로가기 제스처 차단 + 종료 확인 =====
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', () => {
+            history.pushState(null, null, location.href);
+            showExitModal();
+        });
+
+        function showExitModal() {
+            document.getElementById('exit-overlay').classList.add('show');
+        }
+        function closeExitModal() {
+            document.getElementById('exit-overlay').classList.remove('show');
+        }
+        function confirmExit() {
+            // Appintos WebView close: postMessage or window.close
+            if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'CLOSE' }));
+            } else {
+                window.close();
+            }
+        }
+
+        // ===== 초기화 =====
         window.addEventListener('resize', autoScale);
-        window.onload = () => initLevel(0);
+        window.onload = () => {
+            document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+            const savedLevel = loadSavedLevel();
+            initLevel(savedLevel);
+        };
     </script>
 </body>
 </html>
