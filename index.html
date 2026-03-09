@@ -162,6 +162,31 @@
         .msg-btn-retry { background: #ff9500; color: white; }
         .msg-btn-next  { background: #5baad8; color: white; }
 
+        /* ===== 하단 컨트롤 버튼 ===== */
+        #control-btns {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 500;
+        }
+        .ctrl-btn {
+            background: rgba(0,0,0,0.28);
+            border: none;
+            border-radius: 20px;
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            letter-spacing: 0.3px;
+        }
+        .ctrl-btn:active { opacity: 0.7; }
+
         /* ===== 종료 확인 모달 ===== */
         #exit-overlay {
             display: none;
@@ -201,6 +226,11 @@
 
     <button id="sound-btn" tabindex="-1" onclick="toggleSound()">🔊</button>
     <div id="level-indicator">레벨 1 / 10</div>
+
+    <div id="control-btns">
+        <button class="ctrl-btn" tabindex="-1" onclick="undoMove()">↩ 되돌리기</button>
+        <button class="ctrl-btn" tabindex="-1" onclick="resetLevel()">🔄 다시 시작</button>
+    </div>
 
     <div id="game-wrapper">
         <div id="game-container"></div>
