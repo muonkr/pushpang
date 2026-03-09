@@ -1,0 +1,16 @@
+{
+  "name": "pawpush",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "granite dev",
+    "build": "ait build",
+    "preview": "vite preview"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@apps-in-toss/web-framework": "2.0.1",
+    "vite": "^5.0.0"
+  }
+}
